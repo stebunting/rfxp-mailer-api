@@ -1,4 +1,5 @@
 # rfxp-mailer
+![Build Status](https://github.com/stebunting/rfxp-mailer-api/actions/workflows/build.yml/badge.svg)
 
 API for sending emails, validated by Google reCAPTCHA v3, from RFXP.app.
 

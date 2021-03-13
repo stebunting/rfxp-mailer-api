@@ -47,7 +47,7 @@ func HandleLambdaEvent(ctx context.Context, m mailer) (Response, error) {
 
 	r := Response{
 		Status:  "OK",
-		Details: "Email sent",
+		Details: "Email sent successfully",
 	}
 	return r, nil
 }

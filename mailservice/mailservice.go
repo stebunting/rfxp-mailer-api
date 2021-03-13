@@ -35,6 +35,7 @@ type recaptchaResponse struct {
 	ErrorCodes         []string `json:"error-codes"`
 }
 
+// Response return type
 type Response struct {
 	Status  string `json:"status"`
 	Details string `json:"details"`
