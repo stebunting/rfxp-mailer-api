@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<title>Message from RFXp</title>
+	<style>
+		body {
+			font: 1.2em Arial, Verdana, sans-serif;
+		}
+
+		h1 {
+			font-size: 1.4em;
+		}
+
+		ul {
+			list-style-type: none;
+			padding-left: 0;
+		}
+
+		.header {
+			font-weight: bold;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>User Details</h1>
+	<ul>
+		<li><span class="header">NAME: </span>{{ .Name }}</li>
+		<li><span class="header">E-MAIL: </span><a href="mailto:{{ .Email }}">{{ .Email }}</a></li>
+		<li><span class="header">IP: </span>{{ .IP }}</li>
+		<li><span class="header">BROWSER: </span>{{ .UserAgent}}</li>
+	</ul>
+
+	<h1>Message</h1>
+	<p>{{ .Message }}</p>
+</body>
+</html>
