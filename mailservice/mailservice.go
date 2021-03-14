@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -16,6 +17,12 @@ import (
 
 	"gopkg.in/gomail.v2"
 )
+
+type httpClient interface {
+	Post(url string, contentType string, body io.Reader) (resp *http.Response, err error)
+}
+
+var HTTPClient httpClient
 
 type mailer struct {
 	Name          string `json:"name"`
@@ -49,6 +56,10 @@ type smtpSettings struct {
 	email      string
 }
 
+func init() {
+	HTTPClient = &http.Client{}
+}
+
 // getEnvVar returns a supplied environment variable for the current service
 func (m *mailer) getEnvVar(name string) string {
 	return os.Getenv(fmt.Sprintf("RFXP_%s", strings.ToUpper(name)))
@@ -65,7 +76,7 @@ func (m *mailer) callGoogleRecaptcha() (recaptchaResponse, error) {
 
 	// Make API Call
 	url := "https://www.google.com/recaptcha/api/siteverify"
-	response, err := http.Post(
+	response, err := HTTPClient.Post(
 		url,
 		"application/x-www-form-urlencoded",
 		bytes.NewBuffer([]byte(requestBody.Encode())))
@@ -87,7 +98,7 @@ func (m *mailer) callGoogleRecaptcha() (recaptchaResponse, error) {
 	return responseObject, nil
 }
 
-// // verifyGoogleRecaptcha calls Google Recaptcha Service and checks response values.
+// verifyGoogleRecaptcha calls Google Recaptcha Service and checks response values.
 func (m *mailer) verifyGoogleRecaptcha() (bool, error) {
 	var recaptchaThreshold float32 = 0.5
 	response, err := m.callGoogleRecaptcha()
@@ -113,7 +124,7 @@ func (m *mailer) getSettings() (smtpSettings, error) {
 	s.email = m.getEnvVar("EMAIL")
 
 	if s.smtpServer == "" || s.port == 0 || s.username == "" || s.password == "" || s.email == "" {
-		return smtpSettings{}, errors.New("Could not retrieve settings")
+		return smtpSettings{}, errors.New("could not retrieve settings")
 	}
 
 	return s, nil
@@ -142,7 +153,7 @@ func (m *mailer) sendEmail() error {
 	var htmlMsg bytes.Buffer
 	htmlTemplate.Execute(&htmlMsg, m)
 
-	// // Setup Mail
+	// Setup Mail
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", s.email)
 	msg.SetHeader("To", s.email)

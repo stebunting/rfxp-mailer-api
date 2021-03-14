@@ -12,8 +12,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// returnError returns an Error status.
-func returnError(err error) (Response, error) {
+// errorResponse returns an Error status.
+func errorResponse(err error) (Response, error) {
 	return Response{
 		Status:  "Error",
 		Details: err.Error(),
@@ -37,33 +37,33 @@ func HandleLambdaEvent(ctx context.Context, m mailer) (Response, error) {
 
 	// Verify body content
 	if m.Name == "" {
-		return returnError(fmt.Errorf("INVALID INPUT: '%s' is not a valid Name", m.Name))
+		return errorResponse(fmt.Errorf("INVALID INPUT: '%s' is not a valid Name", m.Name))
 	}
 	if m.Email == "" {
-		return returnError(fmt.Errorf("INVALID INPUT: '%s' is not a valid Email", m.Email))
+		return errorResponse(fmt.Errorf("INVALID INPUT: '%s' is not a valid Email", m.Email))
 	}
 	if m.Message == "" {
-		return returnError(fmt.Errorf("INVALID INPUT: '%s' is not a valid Message", m.Message))
+		return errorResponse(fmt.Errorf("INVALID INPUT: '%s' is not a valid Message", m.Message))
 	}
 	if m.GreptchaToken == "" {
-		return returnError(fmt.Errorf("INVALID INPUT: '%s' is not a valid GreptchaToken", m.GreptchaToken))
+		return errorResponse(fmt.Errorf("INVALID INPUT: '%s' is not a valid GreptchaToken", m.GreptchaToken))
 	}
 
 	// Verify Grecaptcha Token
 	validRecaptcha, err := m.verifyGoogleRecaptcha()
 	if err != nil {
 		sentry.CaptureException(err)
-		return returnError(err)
+		return errorResponse(err)
 	}
 	if !validRecaptcha {
-		return returnError(errors.New("invalid Recaptcha"))
+		return errorResponse(errors.New("invalid Recaptcha"))
 	}
 
 	// Send E-Mail
 	err = m.sendEmail()
 	if err != nil {
 		sentry.CaptureException(err)
-		return returnError(err)
+		return errorResponse(err)
 	}
 
 	r := Response{

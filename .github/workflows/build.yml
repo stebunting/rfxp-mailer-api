@@ -16,9 +16,11 @@ jobs:
       with:
         go-version: 1.16
 
+    - run: echo "ENVIRONMENT=build" > .env
+    - run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+    - run: bash <(curl -s https://codecov.io/bash)
     - run: mkdir bin
     - run: env GOOS=linux GOARCH=amd64 go build -o bin/mailer
-    - run: touch .env
     - run: zip -r bin/mailer.zip main.go mailservice/ templates/ .env
     - run: zip -j bin/mailer.zip bin/mailer
     
