@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/joho/godotenv"
 )
 
 // returnError returns an Error status.
@@ -16,6 +22,19 @@ func returnError(err error) (Response, error) {
 
 // HandleLambdaEvent is Lambda Entry Point
 func HandleLambdaEvent(ctx context.Context, m mailer) (Response, error) {
+	// Load env vars
+	godotenv.Load()
+
+	// Initialise Sentry
+	environment := os.Getenv("ENVIRONMENT")
+	err := sentry.Init(sentry.ClientOptions{
+		Environment: environment,
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+	defer sentry.Flush(2 * time.Second)
+
 	// Verify body content
 	if m.Name == "" {
 		return returnError(fmt.Errorf("INVALID INPUT: '%s' is not a valid Name", m.Name))
@@ -33,15 +52,17 @@ func HandleLambdaEvent(ctx context.Context, m mailer) (Response, error) {
 	// Verify Grecaptcha Token
 	validRecaptcha, err := m.verifyGoogleRecaptcha()
 	if err != nil {
+		sentry.CaptureException(err)
 		return returnError(err)
 	}
 	if !validRecaptcha {
-		return returnError(errors.New("Invalid Recaptcha"))
+		return returnError(errors.New("invalid Recaptcha"))
 	}
 
 	// Send E-Mail
 	err = m.sendEmail()
 	if err != nil {
+		sentry.CaptureException(err)
 		return returnError(err)
 	}
 

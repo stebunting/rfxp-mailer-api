@@ -16,10 +16,11 @@ jobs:
       with:
         go-version: 1.16
 
-    - run: mkdir dist
-    - run: env GOOS=linux GOARCH=amd64 go build -o dist/mailer
-    - run: zip dist/mailer.zip templates/*
-    - run: zip -j dist/mailer.zip dist/mailer
+    - run: mkdir bin
+    - run: env GOOS=linux GOARCH=amd64 go build -o bin/mailer
+    - run: touch .env
+    - run: zip -r bin/mailer.zip main.go mailservice/ templates/ .env
+    - run: zip -j bin/mailer.zip bin/mailer
     
     - name: Configure AWS
       uses: aws-actions/configure-aws-credentials@v1
@@ -30,4 +31,4 @@ jobs:
 
     - name: Deploy to Lambda
       run: |
-        aws lambda update-function-code --region eu-west-2 --function-name rfxp-mailer --zip-file fileb://dist/mailer.zip --publish
+        aws lambda update-function-code --region eu-west-2 --function-name rfxp-mailer --zip-file fileb://bin/mailer.zip --publish
