@@ -12,6 +12,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func init() {
+	godotenv.Load()
+}
+
 // errorResponse returns an Error status.
 func errorResponse(err error) (Response, error) {
 	return Response{
@@ -22,9 +26,6 @@ func errorResponse(err error) (Response, error) {
 
 // HandleLambdaEvent is Lambda Entry Point
 func HandleLambdaEvent(ctx context.Context, m mailer) (Response, error) {
-	// Load env vars
-	godotenv.Load()
-
 	// Initialise Sentry
 	environment := os.Getenv("ENVIRONMENT")
 	err := sentry.Init(sentry.ClientOptions{
@@ -58,6 +59,9 @@ func HandleLambdaEvent(ctx context.Context, m mailer) (Response, error) {
 	if !validRecaptcha {
 		return errorResponse(errors.New("invalid Recaptcha"))
 	}
+
+	// Get Location Details
+	m.getLocation()
 
 	// Send E-Mail
 	err = m.sendEmail()

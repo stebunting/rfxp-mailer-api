@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -31,6 +32,7 @@ type mailer struct {
 	GreptchaToken string `json:"greptchaToken"`
 	IP            string `json:"ip"`
 	UserAgent     string `json:"userAgent"`
+	Location      ipStackResponse
 }
 
 type recaptchaResponse struct {
@@ -54,6 +56,22 @@ type smtpSettings struct {
 	username   string
 	password   string
 	email      string
+}
+
+type ipStackResponse struct {
+	Success     bool    `json:"success"`
+	Ip          net.IP  `json:"ip"`
+	CountryName string  `json:"country_name"`
+	RegionName  string  `json:"region_name"`
+	City        string  `json:"city"`
+	PostalCode  string  `json:"zip"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	Location    ipStackLocation
+}
+
+type ipStackLocation struct {
+	CountryFlagEmoji string `json:"country_flag_emoji"`
 }
 
 func init() {
@@ -132,6 +150,8 @@ func (m *mailer) getSettings() (smtpSettings, error) {
 
 // sendEmail sends an email using the message args as settings
 func (m *mailer) sendEmail() error {
+	srcRoot := os.Getenv("SRC_ROOT")
+
 	// Get Service Settings
 	s, err := m.getSettings()
 	if err != nil {
@@ -139,14 +159,14 @@ func (m *mailer) sendEmail() error {
 	}
 
 	// Generate Messages
-	plainTextTemplate, err := template.ParseFiles(path.Join("templates", "plaintext_email.gotmpl"))
+	plainTextTemplate, err := template.ParseFiles(path.Join(srcRoot, "templates", "plaintext_email.gotmpl"))
 	if err != nil {
 		return err
 	}
 	var plainTextMsg bytes.Buffer
 	plainTextTemplate.Execute(&plainTextMsg, m)
 
-	htmlTemplate, err := template.ParseFiles(path.Join("templates", "html_email.gotmpl"))
+	htmlTemplate, err := template.ParseFiles(path.Join(srcRoot, "templates", "html_email.gotmpl"))
 	if err != nil {
 		return err
 	}
@@ -163,8 +183,46 @@ func (m *mailer) sendEmail() error {
 
 	// Send Mail
 	d := gomail.NewDialer(s.smtpServer, s.port, s.username, s.password)
-	if err := d.DialAndSend(msg); err != nil {
+	err = d.DialAndSend(msg)
+	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (m *mailer) getLocation() error {
+	accessKey := os.Getenv("IPSTACK_ACCESS_KEY")
+	baseUrl := "http://api.ipstack.com/"
+
+	ip := net.ParseIP(m.IP)
+	if ip == nil {
+		return errors.New("invalid IP")
+	}
+
+	url, err := url.Parse(fmt.Sprintf("%s%s", baseUrl, ip.String()))
+	if err != nil {
+		return err
+	}
+	q := url.Query()
+	q.Set("access_key", accessKey)
+	url.RawQuery = q.Encode()
+
+	res, err := http.Get(url.String())
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(body, &m.Location); err != nil {
+		return err
+	}
+	if !m.Location.Success {
+		return errors.New("IP Stack call failed")
+	}
+
 	return nil
 }

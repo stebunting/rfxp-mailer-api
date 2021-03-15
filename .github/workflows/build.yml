@@ -16,8 +16,8 @@ jobs:
       with:
         go-version: 1.16
 
-    - run: echo "ENVIRONMENT=build" > .env
-    - run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+    - run: printf "ENVIRONMENT=build\nIPSTACK_ACCESS_KEY=${{ secrets.IPSTACK_ACCESS_KEY }}" > .env
+    - run: SRC_ROOT=$PWD go test -race -coverprofile=coverage.txt -covermode=atomic ./...
     - run: bash <(curl -s https://codecov.io/bash)
     - run: mkdir bin
     - run: env GOOS=linux GOARCH=amd64 go build -o bin/mailer
