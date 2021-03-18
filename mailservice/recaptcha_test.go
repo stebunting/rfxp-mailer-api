@@ -1,35 +1,15 @@
 package mailservice
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
 	"testing"
+
+	"github.com/stebunting/rfxp-mailer/mocks"
 )
-
-type mockHTTPClient struct {
-	RecaptchaResponse recaptchaResponse
-}
-
-func (m *mockHTTPClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
-	if len(m.RecaptchaResponse.ErrorCodes) > 0 {
-		err = fmt.Errorf("%v", m.RecaptchaResponse.ErrorCodes)
-	}
-	replyString, _ := json.Marshal(m.RecaptchaResponse)
-
-	resp = &http.Response{
-		Body: ioutil.NopCloser(bytes.NewBufferString(string(replyString))),
-	}
-	return
-}
 
 func TestRecaptcha(t *testing.T) {
 	m := mailer{}
-	HTTPClient = &mockHTTPClient{
-		recaptchaResponse{
+	HTTPClient = &mocks.MockHTTPClient{
+		Resp: recaptchaResponse{
 			Success: true,
 		},
 	}
@@ -55,7 +35,10 @@ func TestVerifyRecaptcha(t *testing.T) {
 
 	for _, test := range tests {
 		m := mailer{}
-		HTTPClient = &mockHTTPClient{test.RecaptchaResponse}
+		HTTPClient = &mocks.MockHTTPClient{
+			Error: len(test.RecaptchaResponse.ErrorCodes) > 0,
+			Resp:  test.RecaptchaResponse,
+		}
 		got, err := m.verifyGoogleRecaptcha()
 
 		if got != test.ExpectedResponse {
