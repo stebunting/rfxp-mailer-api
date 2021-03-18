@@ -15,6 +15,20 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func SetEnvVars(
+	email string,
+	smtpServer string,
+	smtpPort string,
+	smtpUsername string,
+	smtpPassword string,
+) {
+	os.Setenv("RFXP_EMAIL", email)
+	os.Setenv("RFXP_SMTP_SERVER", smtpServer)
+	os.Setenv("RFXP_SMTP_PORT", smtpPort)
+	os.Setenv("RFXP_SMTP_USERNAME", smtpUsername)
+	os.Setenv("RFXP_SMTP_PASSWORD", smtpPassword)
+}
+
 func TestInvalidInputValidation(t *testing.T) {
 	HTTPClient = &http.Client{}
 	var tests = []struct {
