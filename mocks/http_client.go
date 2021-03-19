@@ -25,3 +25,12 @@ func (m *MockHTTPClient) Post(url string, contentType string, body io.Reader) (r
 	}
 	return
 }
+
+func (m *MockHTTPClient) Get(url string) (resp *http.Response, err error) {
+	if m.Error {
+		err = errors.New("Requested Error")
+	}
+
+	resp = &http.Response{}
+	return
+}

@@ -23,7 +23,6 @@ func TestMailer(t *testing.T) {
 		IP:            "141.65.181.161",
 		UserAgent:     "Go Test",
 	}
-	m.getLocation()
 	err := m.sendEmail()
 	if err == nil {
 		t.Error(err)

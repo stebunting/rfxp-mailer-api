@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
+	"github.com/stebunting/rfxp-mailer/ipstack"
 )
 
 func init() {
@@ -61,7 +62,10 @@ func HandleLambdaEvent(ctx context.Context, m mailer) (Response, error) {
 	}
 
 	// Get Location Details
-	m.getLocation()
+	m.Location, err = ipstack.GetLocation(m.IP)
+	if err != nil {
+		return errorResponse(err)
+	}
 
 	// Send E-Mail
 	err = m.sendEmail()
